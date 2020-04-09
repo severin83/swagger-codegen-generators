@@ -46,6 +46,7 @@ import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.DateSchema;
 import io.swagger.v3.oas.models.media.DateTimeSchema;
+import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.EmailSchema;
 import io.swagger.v3.oas.models.media.FileSchema;
 import io.swagger.v3.oas.models.media.IntegerSchema;
@@ -74,7 +75,6 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1401,6 +1401,9 @@ public abstract class DefaultCodegenConfig implements CodegenConfig {
                 // comment out below as allowableValues is not set in post processing model enum
                 codegenModel.allowableValues = new HashMap<String, Object>();
                 codegenModel.allowableValues.put("values", schema.getEnum());
+            }
+            if (schema.getDiscriminator() != null) {
+                codegenModel.discriminator = schema.getDiscriminator();
             }
             addVars(codegenModel, schema.getProperties(), schema.getRequired());
         }
@@ -4139,6 +4142,20 @@ public abstract class DefaultCodegenConfig implements CodegenConfig {
                 return null;
             }
             return OpenAPIUtil.getSimpleRef(ref);
+        }
+        return null;
+    }
+
+    protected Discriminator getDiscriminator(String name, Map<String, Schema> allDefinitions) {
+        Schema schema = allDefinitions.get(name);
+        if(schema.getDiscriminator() != null)
+            return schema.getDiscriminator();
+        else if(schema instanceof ComposedSchema) {
+            String parent = getParentName((ComposedSchema)schema);
+            if(StringUtils.isNotBlank(parent))
+                return getDiscriminator(parent, allDefinitions);
+            else
+                return null;
         }
         return null;
     }

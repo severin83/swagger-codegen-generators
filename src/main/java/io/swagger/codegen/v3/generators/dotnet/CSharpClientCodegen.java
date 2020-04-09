@@ -10,6 +10,8 @@ import io.swagger.codegen.v3.CodegenParameter;
 import io.swagger.codegen.v3.CodegenProperty;
 import io.swagger.codegen.v3.CodegenType;
 import io.swagger.codegen.v3.SupportingFile;
+import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.swagger.codegen.v3.CodegenConstants.HAS_ENUMS_EXT_NAME;
 import static io.swagger.codegen.v3.CodegenConstants.IS_ENUM_EXT_NAME;
@@ -283,12 +286,6 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
             if (NET35.equals(targetFramework)) {
                 LOGGER.warn(CodegenConstants.GENERATE_PROPERTY_CHANGED + " is only supported by generated code for .NET 4+.");
                 additionalProperties.remove(CodegenConstants.GENERATE_PROPERTY_CHANGED);
-            } else if (NETSTANDARD.equals(targetFramework)) {
-                LOGGER.warn(CodegenConstants.GENERATE_PROPERTY_CHANGED + " is not supported in .NET Standard generated code.");
-                additionalProperties.remove(CodegenConstants.GENERATE_PROPERTY_CHANGED);
-            } else if (Boolean.TRUE.equals(netCoreProjectFileFlag)) {
-                LOGGER.warn(CodegenConstants.GENERATE_PROPERTY_CHANGED + " is not supported in .NET Core csproj project format.");
-                additionalProperties.remove(CodegenConstants.GENERATE_PROPERTY_CHANGED);
             } else {
                 setGeneratePropertyChanged(convertPropertyToBooleanAndWriteBack(CodegenConstants.GENERATE_PROPERTY_CHANGED));
             }
@@ -513,6 +510,7 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
     @Override
     public CodegenModel fromModel(String name, Schema schema, Map<String, Schema> allDefinitions) {
         CodegenModel codegenModel = super.fromModel(name, schema, allDefinitions);
+        Discriminator discriminator = getDiscriminator(name, allDefinitions);
         if (allDefinitions != null && codegenModel != null && codegenModel.parent != null) {
             final Schema parentModel = allDefinitions.get(toModelName(codegenModel.parent));
             if (parentModel != null) {
@@ -527,22 +525,19 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
                     propertyHash.put(property.name, property);
                 }
 
-                for (final CodegenProperty property : codegenModel.readWriteVars) {
-                    if (property.defaultValue == null && property.baseName.equals(parentCodegenModel.discriminator)) {
-                        property.defaultValue = "\"" + name + "\"";
-                    }
-                }
-
                 CodegenProperty last = null;
-                for (final CodegenProperty property : parentCodegenModel.vars) {
+                Map<String, CodegenProperty> parentVarHash = new HashMap<>(parentCodegenModel.readWriteVars.size());
+                for (final CodegenProperty property : parentCodegenModel.readWriteVars) {
                     // helper list of parentVars simplifies templating
-                    if (!propertyHash.containsKey(property.name)) {
+                    if (!propertyHash.containsKey(property.name) && !parentVarHash.containsKey(property.name) && (discriminator == null || !property.baseName.equals(discriminator.getPropertyName()))) {
                         final CodegenProperty parentVar = property.clone();
                         parentVar.getVendorExtensions().put(CodegenConstants.IS_INHERITED_EXT_NAME, Boolean.TRUE);
                         parentVar.getVendorExtensions().put(CodegenConstants.HAS_MORE_EXT_NAME, Boolean.TRUE);
                         last = parentVar;
                         LOGGER.info("adding parent variable {}", property.name);
                         codegenModel.parentVars.add(parentVar);
+                        parentVarHash.put(parentVar.name, parentVar);
+                        codegenModel.readWriteVars.add(parentVar.clone());
                     }
                 }
 
@@ -554,16 +549,28 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
 
         // Cleanup possible duplicates. Currently, readWriteVars can contain the same property twice. May or may not be isolated to C#.
         if (codegenModel != null && codegenModel.readWriteVars != null && codegenModel.readWriteVars.size() > 1) {
-            int length = codegenModel.readWriteVars.size() - 1;
+            List<CodegenProperty> readWriteVars = new ArrayList<>();
+            codegenModel.readWriteVars.forEach(v -> {
+                if(readWriteVars.stream().noneMatch(e -> e.name.equals(v.name)) && (discriminator == null || !v.baseName.equals(discriminator.getPropertyName())))
+                    readWriteVars.add(v);
+            });
+            readWriteVars.get(readWriteVars.size() - 1).getVendorExtensions().put(CodegenConstants.HAS_MORE_EXT_NAME, Boolean.FALSE);
+            codegenModel.readWriteVars = readWriteVars;
+            /* int length = codegenModel.readWriteVars.size() - 1;
             for (int i = length; i > (length / 2); i--) {
                 final CodegenProperty codegenProperty = codegenModel.readWriteVars.get(i);
                 // If the property at current index is found earlier in the list, remove this last instance.
                 if (codegenModel.readWriteVars.indexOf(codegenProperty) < i) {
                     codegenModel.readWriteVars.remove(i);
                 }
-            }
+            } */
         }
 
+        if(discriminator != null) {
+            codegenModel.vars = codegenModel.vars.stream().filter(v -> !v.baseName.equals(discriminator.getPropertyName())).collect(Collectors.toList());
+            codegenModel.vars.get(codegenModel.vars.size() - 1).getVendorExtensions().put(CodegenConstants.HAS_MORE_EXT_NAME, Boolean.FALSE);
+        }
+        
         return codegenModel;
     }
 

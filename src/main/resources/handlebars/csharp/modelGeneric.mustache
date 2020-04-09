@@ -6,10 +6,7 @@
     [JsonConverter(typeof(JsonSubtypes), "{{discriminator.propertyName}}")]{{#children}}
     [JsonSubtypes.KnownSubType(typeof({{classname}}), "{{^vendorExtensions.x-discriminator-value}}{{name}}{{/vendorExtensions.x-discriminator-value}}{{#vendorExtensions.x-discriminator-value}}{{{vendorExtensions.x-discriminator-value}}}{{/vendorExtensions.x-discriminator-value}}")]{{/children}}
     {{/discriminator}}
-    {{#generatePropertyChanged}}
-    [ImplementPropertyChanged]
-    {{/generatePropertyChanged}}
-    {{>visibility}} partial class {{classname}} : {{#parent}}{{{parent}}}, {{/parent}} IEquatable<{{classname}}>{{^netStandard}}{{#validatable}}, IValidatableObject{{/validatable}}{{/netStandard}}
+    {{>visibility}} partial class {{classname}} : {{#parent}}{{{parent}}}, {{/parent}} IEquatable<{{classname}}>{{^netStandard}}{{#validatable}}, IValidatableObject{{/validatable}}{{/netStandard}}{{#generatePropertyChanged}}, INotifyPropertyChanged{{/generatePropertyChanged}}
     {
         {{#vars}}
         {{#items.isEnum}}
@@ -100,13 +97,22 @@ this.{{name}} = {{#lambda.camelcase_param}}{{name}}{{/lambda.camelcase_param}};
         {{#vars}}
         {{^isInherited}}
         {{^isEnum}}
+        private {{{datatype}}} _{{name}};
         /// <summary>
         /// {{^description}}Gets or Sets {{{name}}}{{/description}}{{#description}}{{description}}{{/description}}
         /// </summary>{{#description}}
         /// <value>{{description}}</value>{{/description}}
         [DataMember(Name="{{baseName}}", EmitDefaultValue={{emitDefaultValue}})]{{#isDate}}
         [JsonConverter(typeof(SwaggerDateConverter))]{{/isDate}}
-        public {{{datatype}}} {{name}} { get; {{#isReadOnly}}private {{/isReadOnly}}set; }
+        public {{{datatype}}} {{name}} 
+        { 
+            get { return _{{name}}; }
+            {{#isReadOnly}}private {{/isReadOnly}}set 
+            { 
+                _{{name}} = value; 
+                {{#generatePropertyChanged}}OnPropertyChanged(nameof({{name}}));{{/generatePropertyChanged}} 
+            }
+        }
         {{/isEnum}}
         {{/isInherited}}
 
@@ -169,7 +175,7 @@ this.{{name}} = {{#lambda.camelcase_param}}{{name}}{{/lambda.camelcase_param}};
                     this.{{name}} != null &&
                     input.{{name}} != null &&
                     this.{{name}}.SequenceEqual(input.{{name}})
-                ){{#hasMore}} && {{/hasMore}}{{/isNotContainer}}{{/vars}}{{^vars}}{{#parent}}base.Equals(input){{/parent}}{{^parent}}false{{/parent}}{{/vars}};
+                ){{#hasMore}} && {{/hasMore}}{{/isNotContainer}}{{/vars}}{{^vars}}{{#parent}}base.Equals(input){{/parent}}{{^parent}}true{{/parent}}{{/vars}};
         }
 
         /// <summary>
@@ -193,7 +199,7 @@ this.{{name}} = {{#lambda.camelcase_param}}{{name}}{{/lambda.camelcase_param}};
                 return hashCode;
             }
         }
-{{^netStandard}}
+
 
 {{#generatePropertyChanged}}
         /// <summary>
@@ -217,6 +223,8 @@ this.{{name}} = {{#lambda.camelcase_param}}{{name}}{{/lambda.camelcase_param}};
         }
 
 {{/generatePropertyChanged}}
+
+{{^netStandard}}
 {{#validatable}}
 {{#discriminator}}
         /// <summary>
