@@ -7,6 +7,7 @@ import io.swagger.codegen.v3.CodegenConstants;
 import io.swagger.codegen.v3.CodegenContent;
 import io.swagger.codegen.v3.CodegenModel;
 import io.swagger.codegen.v3.CodegenOperation;
+import io.swagger.codegen.v3.CodegenParameter;
 import io.swagger.codegen.v3.CodegenProperty;
 import io.swagger.codegen.v3.generators.DefaultCodegenConfig;
 import io.swagger.codegen.v3.generators.handlebars.csharp.CsharpHelper;
@@ -1079,8 +1080,8 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegenConfig {
             addParemeters(content, codegenOperation.pathParams);
         }
     }
-/*
-    TODO: uncomment if/when switching to stream for file upload
+
+    //TODO: uncomment if/when switching to stream for file upload
     @Override
     public void postProcessParameter(CodegenParameter parameter) {
         if (parameter.getIsBinary()) {
@@ -1088,6 +1089,5 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegenConfig {
         }
         super.postProcessParameter(parameter);
     }
-*/
 
 }

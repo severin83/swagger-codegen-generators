@@ -253,7 +253,7 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
             }
 
             // TODO: NETSTANDARD=v5.0 and targetFrameworkNuget=netstandard1.3. These need to sync.
-            setTargetFrameworkNuget("netstandard1.3");
+            setTargetFrameworkNuget("netstandard2.0");
             setSupportsAsync(Boolean.TRUE);
             setSupportsUWP(Boolean.FALSE);
             setNetStandard(Boolean.TRUE);

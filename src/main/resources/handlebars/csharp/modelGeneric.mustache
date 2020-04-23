@@ -3,10 +3,10 @@
     /// </summary>
     [DataContract]
     {{#discriminator}}
-    [JsonConverter(typeof(JsonSubtypes), "{{discriminator.propertyName}}")]{{#children}}
+    [Client.SerializableJsonSubtypes(typeof({{classname}}), "{{discriminator.propertyName}}")]{{#children}}
     [JsonSubtypes.KnownSubType(typeof({{classname}}), "{{^vendorExtensions.x-discriminator-value}}{{name}}{{/vendorExtensions.x-discriminator-value}}{{#vendorExtensions.x-discriminator-value}}{{{vendorExtensions.x-discriminator-value}}}{{/vendorExtensions.x-discriminator-value}}")]{{/children}}
     {{/discriminator}}
-    {{>visibility}} partial class {{classname}} : {{#parent}}{{{parent}}}, {{/parent}} IEquatable<{{classname}}>{{^netStandard}}{{#validatable}}, IValidatableObject{{/validatable}}{{/netStandard}}{{#generatePropertyChanged}}, INotifyPropertyChanged{{/generatePropertyChanged}}
+    {{>visibility}} partial class {{classname}} : {{#parent}}{{{parent}}}, {{/parent}} IEquatable<{{classname}}>{{^netStandard}}{{#validatable}}, IValidatableObject{{/validatable}}{{/netStandard}}{{^parent}}{{#generatePropertyChanged}}, INotifyPropertyChanged{{/generatePropertyChanged}}{{/parent}}
     {
         {{#vars}}
         {{#items.isEnum}}
@@ -22,6 +22,7 @@
         {{/complexType}}
         {{/isEnum}}
         {{#isEnum}}
+        private {{#complexType}}{{{complexType}}}{{/complexType}}{{^complexType}}{{{datatypeWithEnum}}}{{/complexType}}{{^isContainer}}{{^required}}?{{/required}}{{/isContainer}} _{{name}};
         /// <summary>
         /// {{^description}}Gets or Sets {{{name}}}{{/description}}{{#description}}{{description}}{{/description}}
         /// </summary>
@@ -29,7 +30,15 @@
         /// <value>{{description}}</value>
         {{/description}}
         [DataMember(Name="{{baseName}}", EmitDefaultValue={{emitDefaultValue}})]
-        public {{#complexType}}{{{complexType}}}{{/complexType}}{{^complexType}}{{{datatypeWithEnum}}}{{/complexType}}{{^isContainer}}{{^required}}?{{/required}}{{/isContainer}} {{name}} { get; set; }
+        public {{#complexType}}{{{complexType}}}{{/complexType}}{{^complexType}}{{{datatypeWithEnum}}}{{/complexType}}{{^isContainer}}{{^required}}?{{/required}}{{/isContainer}} {{name}}
+        { 
+            get { return _{{name}}; }
+            {{#isReadOnly}}private {{/isReadOnly}}set 
+            { 
+                _{{name}} = value; 
+                {{#generatePropertyChanged}}OnPropertyChanged(nameof({{name}}));{{/generatePropertyChanged}} 
+            }
+        }
         {{/isEnum}}
         {{/vars}}
     {{#hasRequired}}
@@ -200,7 +209,7 @@ this.{{name}} = {{#lambda.camelcase_param}}{{name}}{{/lambda.camelcase_param}};
             }
         }
 
-
+{{^parent}}
 {{#generatePropertyChanged}}
         /// <summary>
         /// Property changed event handler
@@ -223,6 +232,7 @@ this.{{name}} = {{#lambda.camelcase_param}}{{name}}{{/lambda.camelcase_param}};
         }
 
 {{/generatePropertyChanged}}
+{{/parent}}
 
 {{^netStandard}}
 {{#validatable}}

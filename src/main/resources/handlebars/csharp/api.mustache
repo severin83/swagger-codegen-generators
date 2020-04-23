@@ -259,7 +259,7 @@ namespace {{packageName}}.{{apiPackage}}
             {{/isForm}}
             {{^isForm}}
             {{#bodyParam}}
-            if ({{paramName}} != null && {{paramName}}.GetType() != typeof(byte[]))
+            if ({{paramName}} != null && {{paramName}}.GetType() != typeof(byte[]) && {{paramName}}.GetType() != typeof(string))
             {
                 localVarPostBody = this.Configuration.ApiClient.Serialize({{paramName}}); // http body (model) parameter
             }

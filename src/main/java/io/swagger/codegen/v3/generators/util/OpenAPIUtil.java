@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.swagger.codegen.v3.CodegenConstants.HAS_VALIDATION_EXT_NAME;
+import static io.swagger.codegen.v3.CodegenConstants.IS_ENUM_EXT_NAME;;
 
 public class OpenAPIUtil {
 
@@ -27,6 +28,9 @@ public class OpenAPIUtil {
         codegenProperty.maxLength = schema.getMaxLength();
         if (codegenProperty.pattern != null || codegenProperty.minLength != null || codegenProperty.maxLength != null) {
             codegenProperty.getVendorExtensions().put(HAS_VALIDATION_EXT_NAME, Boolean.TRUE);
+        }
+        if (schema.getEnum() != null) {
+            codegenProperty.getVendorExtensions().put(IS_ENUM_EXT_NAME, Boolean.TRUE);
         }
     }
 
