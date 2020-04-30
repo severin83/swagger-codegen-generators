@@ -568,7 +568,8 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
 
         if(discriminator != null) {
             codegenModel.vars = codegenModel.vars.stream().filter(v -> !v.baseName.equals(discriminator.getPropertyName())).collect(Collectors.toList());
-            codegenModel.vars.get(codegenModel.vars.size() - 1).getVendorExtensions().put(CodegenConstants.HAS_MORE_EXT_NAME, Boolean.FALSE);
+            if(codegenModel.vars.size() > 0)
+                codegenModel.vars.get(codegenModel.vars.size() - 1).getVendorExtensions().put(CodegenConstants.HAS_MORE_EXT_NAME, Boolean.FALSE);
         }
         
         return codegenModel;

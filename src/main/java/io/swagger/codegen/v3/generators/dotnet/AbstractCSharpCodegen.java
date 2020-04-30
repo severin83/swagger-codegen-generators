@@ -22,6 +22,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.DateSchema;
 import io.swagger.v3.oas.models.media.DateTimeSchema;
 import io.swagger.v3.oas.models.media.MapSchema;
@@ -795,6 +796,8 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegenConfig {
     public String getTypeDeclaration(Schema propertySchema) {
         if (propertySchema instanceof ArraySchema) {
             Schema inner = ((ArraySchema) propertySchema).getItems();
+            if(inner instanceof ByteArraySchema)
+                return getTypeDeclaration(inner);
             return String.format("%s<%s>", getSchemaType(propertySchema), getTypeDeclaration(inner));
         } else if (propertySchema instanceof MapSchema && hasSchemaProperties(propertySchema)) {
             Schema inner = (Schema) propertySchema.getAdditionalProperties();
