@@ -889,6 +889,8 @@ public abstract class DefaultCodegenConfig implements CodegenConfig {
 
         // initialize special character mapping
         initalizeSpecialCharacterMapping(specialCharReplacements);
+
+        addSwitch("removeOperationIdPostfix", "Removes auto-generated enumerating post-fixes on operation Ids", Boolean.FALSE);
     }
 
     /**
@@ -1921,6 +1923,9 @@ public abstract class DefaultCodegenConfig implements CodegenConfig {
         }
 
         String operationId = getOrGenerateOperationId(operation, path, httpMethod);
+        if(true) { // if(removeOperationIdPostfix)
+            operationId = operationId.replaceFirst("_\\d+$", "");
+        }
         // remove prefix in operationId
         if (removeOperationIdPrefix) {
             int offset = operationId.indexOf('_');
